@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\PartnerRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
@@ -26,6 +28,17 @@ class Partner
 
     #[ORM\Column(type: Types::DATE_IMMUTABLE)]
     private ?\DateTimeImmutable $entry = null;
+
+    #[ORM\ManyToOne(inversedBy: 'partners')]
+    private ?Corporation $corporation = null;
+
+    #[ORM\OneToMany(targetEntity: Corporation::class, mappedBy: 'partner')]
+    private Collection $corporations;
+
+    public function __construct()
+    {
+        $this->corporations = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -76,6 +89,44 @@ class Partner
     public function setEntry(\DateTimeImmutable $entry): static
     {
         $this->entry = $entry;
+
+        return $this;
+    }
+
+    public function getCorporation(): ?Corporation
+    {
+        return $this->corporation;
+    }
+
+    public function setCorporation(?Corporation $corporation): static
+    {
+        $this->corporation = $corporation;
+
+        return $this;
+    }
+
+    public function getCorporations(): Collection
+    {
+        return $this->corporations;
+    }
+
+    public function addCorporation(Corporation $corporation): static
+    {
+        if (!$this->corporations->contains($corporation)) {
+            $this->corporations->add($corporation);
+            $corporation->setPartner($this);
+        }
+
+        return $this;
+    }
+
+    public function removeCorporation(Corporation $corporation): static
+    {
+        if ($this->corporations->removeElement($corporation)) {
+            if ($corporation->getPartner() === $this) {
+                $corporation->setPartner(null);
+            }
+        }
 
         return $this;
     }
