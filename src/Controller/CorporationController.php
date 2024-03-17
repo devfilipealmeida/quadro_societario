@@ -26,7 +26,21 @@ class CorporationController extends AbstractController
     {
         $corporation = $corporationRepository->find($corporation);
 
-        if(!$corporation) throw $this->json([
+        if(!$corporation) return $this->json([
+            'message' => 'Empresa não encontrada.'
+        ]);
+
+        return $this->json([
+            'data' => $corporation,
+        ]);
+    }
+
+    #[Route('/corporations/cnpj/{cnpj}', name: 'corporation_by_cnpj', methods: ['GET'])]
+    public function getCorporationByCnpj(string $cnpj, CorporationRepository $corporationRepository): JsonResponse
+    {
+        $corporation = $corporationRepository->findOneBy(['cnpj' => $cnpj]);
+
+        if(!$corporation) return $this->json([
             'message' => 'Empresa não encontrada.'
         ]);
 
