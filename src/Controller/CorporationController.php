@@ -21,6 +21,20 @@ class CorporationController extends AbstractController
         ]);
     }
 
+    #[Route('/corporations/{corporation}', name: 'corporation_by_id', methods: ['GET'])]
+    public function getCorporationById(int $corporation, CorporationRepository $corporationRepository): JsonResponse
+    {
+        $corporation = $corporationRepository->find($corporation);
+
+        if(!$corporation) throw $this->json([
+            'message' => 'Empresa não encontrada.'
+        ]);
+
+        return $this->json([
+            'data' => $corporation,
+        ]);
+    }
+
     #[Route('/corporations', name: 'corporation_create', methods: ['POST'])]
     public function create(Request $request, CorporationRepository $corporationRepository): JsonResponse
     {
@@ -42,7 +56,7 @@ class CorporationController extends AbstractController
         //Se não existir, continua o cadastro
         $corporation = new Corporation();
 
-        //dados do responsável pela empres/cadastro
+        //dados do responsável pela empresa/cadastro
         $corporation->setResponsibleCompany($data['responsible_company']);
         $corporation->setCpf($data['cpf']);
         // Converte a string de data para um objeto DateTimeImmutable
@@ -74,4 +88,6 @@ class CorporationController extends AbstractController
             'data' => $corporation,
         ], 201);
     }
+
+
 }
