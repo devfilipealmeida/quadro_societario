@@ -12,4 +12,22 @@ class CorporationRepository extends ServiceEntityRepository
     {
         parent::__construct($registry, Corporation::class);
     }
+
+    public function add(Corporation $entity, bool $flush = false): void
+    {
+        $this->getEntityManager()->persist($entity);
+
+        if($flush) {
+            $this->getEntityManager()->flush();
+        }
+    }
+
+    public function remove(Corporation $entity, bool $flush = false): void
+    {
+        $this->getEntityManager()->remove($entity);
+
+        if($flush) {
+            $this->getEntityManager()->flush();
+        }
+    }
 }
