@@ -7,6 +7,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\HttpFoundation\Request;
 use App\Repository\PartnerRepository;
+use App\Repository\CorporationRepository;
 use App\Entity\Partner;
 use Doctrine\Persistence\ManagerRegistry;
 use DateTime;
@@ -17,8 +18,21 @@ class PartnerController extends AbstractController
     #[Route('/partners', name: 'partner_list', methods: ['GET'])]
     public function index(PartnerRepository $partnerRepository): JsonResponse
     {
+        $partners = $partnerRepository->findAll();
+
+        $serializedPartners = [];
+        foreach ($partners as $partner) {
+            $serializedPartners[] = [
+                'id' => $partner->getId(),
+                'name' => $partner->getName(),
+                'cpf' => $partner->getCpf(),
+                'qualification' => $partner->getQualification(),
+                'entry' => $partner->getEntry()
+            ];
+        }
+
         return $this->json([
-            'data' => $partnerRepository->findAll(),
+            'data' => $serializedPartners,
         ], 200);
     }
 
@@ -33,34 +47,36 @@ class PartnerController extends AbstractController
             ], 404);
         }
 
-        $data = $serializer->serialize($partner, 'json', [
-            'circular_reference_handler' => function ($object) {
-                return $object->getId();
-            },
-            'attributes' => [
-                'id',
-                'name',
-                'cpf',
-                'qualification',
-                'entry',
-                'corporations' => [
-                    'id',
-                    'responsible_company',
-                    'cpf',
-                    'birth_date',
-                    'fantasy_name',
-                    'cnpj',
-                    'address',
-                    'neighborhood',
-                    'complement',
-                    'city',
-                    'state',
-                    'created_at',
-                    'updated_at',
-                ]
-            ]
-        ]);
+        $partnerData = [
+            'id' => $partner->getId(),
+            'name' => $partner->getName(),
+            'cpf' => $partner->getCpf(),
+            'qualification' => $partner->getQualification(),
+            'entry' => $partner->getEntry()
+        ];
 
+        $corporationsData = [];
+        foreach ($partner->getCorporations() as $corporation) {
+            $corporationsData[] = [
+                'id' => $corporation->getId(),
+                'responsible_company' => $corporation->getResponsibleCompany(),
+                'cpf' => $corporation->getCpf(),
+                'birth_date' => $corporation->getBirthDate()->format('Y-m-d'),
+                'fantasy_name' => $corporation->getFantasyName(),
+                'cnpj' => $corporation->getCnpj(),
+                'address' => $corporation->getAddress(),
+                'neighborhood' => $corporation->getNeighborhood(),
+                'complement' => $corporation->getComplement(),
+                'city' => $corporation->getCity(),
+                'state' => $corporation->getState(),
+                'created_at' => $corporation->getCreatedAt()->format('Y-m-d H:i:s'),
+                'updated_at' => $corporation->getUpdatedAt()->format('Y-m-d H:i:s'),
+            ];
+        }
+
+        $partnerData['corporations'] = $corporationsData;
+
+        $data = $serializer->serialize($partnerData, 'json');
         return JsonResponse::fromJsonString($data);
     }
 
@@ -76,39 +92,41 @@ class PartnerController extends AbstractController
             ], 404);
         }
     
-        $data = $serializer->serialize($partner, 'json', [
-            'circular_reference_handler' => function ($object) {
-                return $object->getId();
-            },
-            'attributes' => [
-                'id',
-                'name',
-                'cpf',
-                'qualification',
-                'entry',
-                'corporations' => [
-                    'id',
-                    'responsible_company',
-                    'cpf',
-                    'birth_date',
-                    'fantasy_name',
-                    'cnpj',
-                    'address',
-                    'neighborhood',
-                    'complement',
-                    'city',
-                    'state',
-                    'created_at',
-                    'updated_at',
-                ]
-            ]
-        ]);
-    
+        $partnerData = [
+            'id' => $partner->getId(),
+            'name' => $partner->getName(),
+            'cpf' => $partner->getCpf(),
+            'qualification' => $partner->getQualification(),
+            'entry' => $partner->getEntry()
+        ];
+
+        $corporationsData = [];
+        foreach ($partner->getCorporations() as $corporation) {
+            $corporationsData[] = [
+                'id' => $corporation->getId(),
+                'responsible_company' => $corporation->getResponsibleCompany(),
+                'cpf' => $corporation->getCpf(),
+                'birth_date' => $corporation->getBirthDate()->format('Y-m-d'),
+                'fantasy_name' => $corporation->getFantasyName(),
+                'cnpj' => $corporation->getCnpj(),
+                'address' => $corporation->getAddress(),
+                'neighborhood' => $corporation->getNeighborhood(),
+                'complement' => $corporation->getComplement(),
+                'city' => $corporation->getCity(),
+                'state' => $corporation->getState(),
+                'created_at' => $corporation->getCreatedAt()->format('Y-m-d H:i:s'),
+                'updated_at' => $corporation->getUpdatedAt()->format('Y-m-d H:i:s'),
+            ];
+        }
+
+        $partnerData['corporations'] = $corporationsData;
+
+        $data = $serializer->serialize($partnerData, 'json');
         return JsonResponse::fromJsonString($data);
     }
 
     #[Route('/partners', name: 'partner_create', methods: ['POST'])]
-    public function create(Request $request, PartnerRepository $partnerRepository): JsonResponse
+    public function create(Request $request, PartnerRepository $partnerRepository, CorporationRepository $corporationRepository): JsonResponse
     {
         if($request->headers->get('Content-Type') == 'application/json'){
             $data = $request->toArray();
@@ -121,6 +139,20 @@ class PartnerController extends AbstractController
             return $this->json([
              'message' => 'Já existe uma pessoa cadastrada com esse CPF.'
             ], 400);
+        }
+
+        if (!isset($data['corporation_id'])) {
+            return $this->json([
+                'message' => 'É necessário fornecer o ID da Corporation para criar um Partner associado a ela.'
+            ], 400);
+        }
+
+        $corporation = $corporationRepository->find(['id' => $data['corporation_id']]);
+
+        if (!$corporation) {
+            return $this->json([
+                'message' => 'A Empresa associada não pôde ser encontrada.'
+            ], 404);
         }
 
         $partner = new Partner();
@@ -136,11 +168,12 @@ class PartnerController extends AbstractController
         }
         $partner->setEntry(new \DateTimeImmutable($entryDate->format('Y-m-d')));
 
+        $partner->setCorporation($corporation);
+
         $partnerRepository->add($partner, true);
 
         return $this->json([
             'message' => 'Sócio criado com sucesso.',
-            'data' => $partner,
         ], 201);
     }
 
@@ -175,7 +208,6 @@ class PartnerController extends AbstractController
 
         return $this->json([
             'message' => 'Sócio atualizado com sucesso.',
-            'data' => $partner,
         ], 201);
     }
 
@@ -194,7 +226,6 @@ class PartnerController extends AbstractController
 
         return $this->json([
             'message' => 'Sócio removido com sucesso.',
-            'data' => $partner
         ], 200);
     }
 }
