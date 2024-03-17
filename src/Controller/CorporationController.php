@@ -10,6 +10,7 @@ use App\Repository\CorporationRepository;
 use App\Entity\Corporation;
 use Doctrine\Persistence\ManagerRegistry;
 use DateTime;
+use Symfony\Component\Serializer\SerializerInterface;
 
 class CorporationController extends AbstractController
 {
@@ -22,32 +23,89 @@ class CorporationController extends AbstractController
     }
 
     #[Route('/corporations/{corporation}', name: 'corporation_by_id', methods: ['GET'])]
-    public function getCorporationById(int $corporation, CorporationRepository $corporationRepository): JsonResponse
+    public function getCorporationById(int $corporation, CorporationRepository $corporationRepository, SerializerInterface $serializer): JsonResponse
     {
         $corporation = $corporationRepository->find($corporation);
 
-        if(!$corporation) return $this->json([
-            'message' => 'Empresa não encontrada.'
-        ], 404);
+        if(!$corporation) {
+            return $this->json([
+                'message' => 'Empresa não encontrada.'
+            ], 404);
+        }
 
-        return $this->json([
-            'data' => $corporation,
-        ], 200);
+        $data = $serializer->serialize($corporation, 'json', [
+            'circular_reference_handler' => function ($object) {
+                return $object->getId();
+            },
+            'attributes' => [
+                'id',
+                'responsible_company',
+                'cpf',
+                'birth_date',
+                'fantasy_name',
+                'cnpj',
+                'address',
+                'neighborhood',
+                'complement',
+                'city',
+                'state',
+                'created_at',
+                'updated_at',
+                'partners' => [
+                    'id',
+                    'name',
+                    'cpf',
+                    'qualification',
+                    'entry'
+                ]
+            ]
+        ]);
+
+        return JsonResponse::fromJsonString($data);
     }
 
+
     #[Route('/corporations/cnpj/{cnpj}', name: 'corporation_by_cnpj', methods: ['GET'])]
-    public function getCorporationByCnpj(string $cnpj, CorporationRepository $corporationRepository): JsonResponse
+    public function getCorporationByCnpj(string $cnpj, CorporationRepository $corporationRepository, SerializerInterface $serializer): JsonResponse
     {
-        //busca a empresa pelo cnpj
+        // Busca a empresa pelo CNPJ
         $corporation = $corporationRepository->findOneBy(['cnpj' => $cnpj]);
 
-        if(!$corporation) return $this->json([
-            'message' => 'Empresa não encontrada.'
-        ], 404);
+        if(!$corporation) {
+            return $this->json([
+                'message' => 'Empresa não encontrada.'
+            ], 404);
+        }
 
-        return $this->json([
-            'data' => $corporation,
-        ], 200);
+        $data = $serializer->serialize($corporation, 'json', [
+            'circular_reference_handler' => function ($object) {
+                return $object->getId();
+            },
+            'attributes' => [
+                'id',
+                'responsible_company',
+                'cpf',
+                'birth_date',
+                'fantasy_name',
+                'cnpj',
+                'address',
+                'neighborhood',
+                'complement',
+                'city',
+                'state',
+                'created_at',
+                'updated_at',
+                'partners' => [
+                    'id',
+                    'name',
+                    'cpf',
+                    'qualification',
+                    'entry'
+                ]
+            ]
+        ]);
+
+        return JsonResponse::fromJsonString($data);
     }
 
     #[Route('/corporations', name: 'corporation_create', methods: ['POST'])]
