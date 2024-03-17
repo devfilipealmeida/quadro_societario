@@ -10,6 +10,7 @@ use App\Repository\PartnerRepository;
 use App\Entity\Partner;
 use Doctrine\Persistence\ManagerRegistry;
 use DateTime;
+use Symfony\Component\Serializer\SerializerInterface;
 
 class PartnerController extends AbstractController
 {
@@ -22,31 +23,88 @@ class PartnerController extends AbstractController
     }
 
     #[Route('/partners/{partner}', name: 'partner_by_id', methods: ['GET'])]
-    public function getPartnerById(int $partner, PartnerRepository $partnerRepository): JsonResponse
+    public function getPartnerById(int $partner, PartnerRepository $partnerRepository, SerializerInterface $serializer): JsonResponse
     {
         $partner = $partnerRepository->find($partner);
 
-        if(!$partner) return $this->json([
-            'message' => 'Sócio não encontrado.'
-        ], 404);
+        if(!$partner) {
+            return $this->json([
+                'message' => 'Sócio não encontrado.'
+            ], 404);
+        }
 
-        return $this->json([
-            'data' => $partner,
-        ], 200);
+        $data = $serializer->serialize($partner, 'json', [
+            'circular_reference_handler' => function ($object) {
+                return $object->getId();
+            },
+            'attributes' => [
+                'id',
+                'name',
+                'cpf',
+                'qualification',
+                'entry',
+                'corporations' => [
+                    'id',
+                    'responsible_company',
+                    'cpf',
+                    'birth_date',
+                    'fantasy_name',
+                    'cnpj',
+                    'address',
+                    'neighborhood',
+                    'complement',
+                    'city',
+                    'state',
+                    'created_at',
+                    'updated_at',
+                ]
+            ]
+        ]);
+
+        return JsonResponse::fromJsonString($data);
     }
 
+
     #[Route('/partners/cpf/{cpf}', name: 'partner_by_cpf', methods: ['GET'])]
-    public function getPartnerByCPF(string $cpf, PartnerRepository $partnerRepository): JsonResponse
+    public function getPartnerByCPF(string $cpf, PartnerRepository $partnerRepository, SerializerInterface $serializer): JsonResponse
     {
         $partner = $partnerRepository->findOneBy(['cpf' => $cpf]);
-
-        if(!$partner) return $this->json([
-            'message' => 'Sócio não encontrado.'
-        ], 404);
-
-        return $this->json([
-            'data' => $partner,
-        ], 200);
+    
+        if(!$partner) {
+            return $this->json([
+                'message' => 'Sócio não encontrado.'
+            ], 404);
+        }
+    
+        $data = $serializer->serialize($partner, 'json', [
+            'circular_reference_handler' => function ($object) {
+                return $object->getId();
+            },
+            'attributes' => [
+                'id',
+                'name',
+                'cpf',
+                'qualification',
+                'entry',
+                'corporations' => [
+                    'id',
+                    'responsible_company',
+                    'cpf',
+                    'birth_date',
+                    'fantasy_name',
+                    'cnpj',
+                    'address',
+                    'neighborhood',
+                    'complement',
+                    'city',
+                    'state',
+                    'created_at',
+                    'updated_at',
+                ]
+            ]
+        ]);
+    
+        return JsonResponse::fromJsonString($data);
     }
 
     #[Route('/partners', name: 'partner_create', methods: ['POST'])]
