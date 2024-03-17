@@ -74,6 +74,7 @@ class CorporationController extends AbstractController
         //dados do responsável pela empresa/cadastro
         $corporation->setResponsibleCompany($data['responsible_company']);
         $corporation->setCpf($data['cpf']);
+        
         // Converte a string de data para um objeto DateTimeImmutable
         $birthDate = DateTime::createFromFormat('d/m/Y', $data['birth_date']);
         if ($birthDate === false) {
@@ -169,7 +170,7 @@ class CorporationController extends AbstractController
         $corporationRepository->remove($corporation, true);
 
         return $this->json([
-            'message' => 'Empresa removida com sucesso',
+            'message' => 'Empresa removida com sucesso.',
             'data' => $corporation
         ], 200);
     }
