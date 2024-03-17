@@ -22,7 +22,7 @@ class PartnerController extends AbstractController
     }
 
     #[Route('/partners/{partner}', name: 'partner_by_id', methods: ['GET'])]
-    public function getPrtnerById(int $partner, PartnerRepository $partnerRepository): JsonResponse
+    public function getPartnerById(int $partner, PartnerRepository $partnerRepository): JsonResponse
     {
         $partner = $partnerRepository->find($partner);
 
@@ -36,7 +36,7 @@ class PartnerController extends AbstractController
     }
 
     #[Route('/partners/cpf/{cpf}', name: 'partner_by_cpf', methods: ['GET'])]
-    public function getPartnerByCnpj(string $cpf, PartnerRepository $partnerRepository): JsonResponse
+    public function getPartnerByCPF(string $cpf, PartnerRepository $partnerRepository): JsonResponse
     {
         $partner = $partnerRepository->findOneBy(['cpf' => $cpf]);
 
