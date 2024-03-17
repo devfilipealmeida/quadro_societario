@@ -10,44 +10,127 @@ use App\Repository\CorporationRepository;
 use App\Entity\Corporation;
 use Doctrine\Persistence\ManagerRegistry;
 use DateTime;
+use Symfony\Component\Serializer\SerializerInterface;
 
 class CorporationController extends AbstractController
 {
     #[Route('/corporations', name: 'corporation_list', methods: ['GET'])]
-    public function index(CorporationRepository $corporationRepository): JsonResponse
+    public function index(CorporationRepository $corporationRepository, SerializerInterface $serializer): JsonResponse
     {
+        $corporations = $corporationRepository->findAll();
+
+        $serializedCorporations = [];
+        foreach ($corporations as $corporation) {
+            $serializedCorporations[] = [
+                'id' => $corporation->getId(),
+                'responsible_company' => $corporation->getResponsibleCompany(),
+                'cpf' => $corporation->getCpf(),
+                'birth_date' => $corporation->getBirthDate()->format('Y-m-d'),
+                'fantasy_name' => $corporation->getFantasyName(),
+                'cnpj' => $corporation->getCnpj(),
+                'address' => $corporation->getAddress(),
+                'neighborhood' => $corporation->getNeighborhood(),
+                'complement' => $corporation->getComplement(),
+                'city' => $corporation->getCity(),
+                'state' => $corporation->getState(),
+                'created_at' => $corporation->getCreatedAt()->format('Y-m-d H:i:s'),
+                'updated_at' => $corporation->getUpdatedAt()->format('Y-m-d H:i:s'),
+            ];
+        }
+
         return $this->json([
-            'data' => $corporationRepository->findAll(),
+            'data' => $serializedCorporations,
         ], 200);
     }
 
     #[Route('/corporations/{corporation}', name: 'corporation_by_id', methods: ['GET'])]
-    public function getCorporationById(int $corporation, CorporationRepository $corporationRepository): JsonResponse
+    public function getCorporationById(int $corporation, CorporationRepository $corporationRepository, SerializerInterface $serializer): JsonResponse
     {
         $corporation = $corporationRepository->find($corporation);
 
-        if(!$corporation) return $this->json([
-            'message' => 'Empresa não encontrada.'
-        ], 404);
+        if(!$corporation) {
+            return $this->json([
+                'message' => 'Empresa não encontrada.'
+            ], 404);
+        }
 
-        return $this->json([
-            'data' => $corporation,
-        ], 200);
+        $corporationData = [
+            'id' => $corporation->getId(),
+            'responsible_company' => $corporation->getResponsibleCompany(),
+            'cpf' => $corporation->getCpf(),
+            'birth_date' => $corporation->getBirthDate()->format('Y-m-d'),
+            'fantasy_name' => $corporation->getFantasyName(),
+            'cnpj' => $corporation->getCnpj(),
+            'address' => $corporation->getAddress(),
+            'neighborhood' => $corporation->getNeighborhood(),
+            'complement' => $corporation->getComplement(),
+            'city' => $corporation->getCity(),
+            'state' => $corporation->getState(),
+            'created_at' => $corporation->getCreatedAt()->format('Y-m-d H:i:s'),
+            'updated_at' => $corporation->getUpdatedAt()->format('Y-m-d H:i:s'),
+        ];
+
+        $partnersData = [];
+        foreach ($corporation->getPartners() as $partner) {
+            $partnersData[] = [
+                'id' => $partner->getId(),
+                'name' => $partner->getName(),
+                'cpf' => $partner->getCpf(),
+                'qualification' => $partner->getQualification(),
+                'entry' => $partner->getEntry()->format('Y-m-d'),
+            ];
+        }
+
+        $corporationData['partners'] = $partnersData;
+
+        $data = $serializer->serialize($corporationData, 'json');
+        return JsonResponse::fromJsonString($data);
     }
 
+
     #[Route('/corporations/cnpj/{cnpj}', name: 'corporation_by_cnpj', methods: ['GET'])]
-    public function getCorporationByCnpj(string $cnpj, CorporationRepository $corporationRepository): JsonResponse
+    public function getCorporationByCnpj(string $cnpj, CorporationRepository $corporationRepository, SerializerInterface $serializer): JsonResponse
     {
-        //busca a empresa pelo cnpj
+        // Busca a empresa pelo CNPJ
         $corporation = $corporationRepository->findOneBy(['cnpj' => $cnpj]);
 
-        if(!$corporation) return $this->json([
-            'message' => 'Empresa não encontrada.'
-        ], 404);
+        if(!$corporation) {
+            return $this->json([
+                'message' => 'Empresa não encontrada.'
+            ], 404);
+        }
 
-        return $this->json([
-            'data' => $corporation,
-        ], 200);
+        $corporationData = [
+            'id' => $corporation->getId(),
+            'responsible_company' => $corporation->getResponsibleCompany(),
+            'cpf' => $corporation->getCpf(),
+            'birth_date' => $corporation->getBirthDate()->format('Y-m-d'),
+            'fantasy_name' => $corporation->getFantasyName(),
+            'cnpj' => $corporation->getCnpj(),
+            'address' => $corporation->getAddress(),
+            'neighborhood' => $corporation->getNeighborhood(),
+            'complement' => $corporation->getComplement(),
+            'city' => $corporation->getCity(),
+            'state' => $corporation->getState(),
+            'created_at' => $corporation->getCreatedAt()->format('Y-m-d H:i:s'),
+            'updated_at' => $corporation->getUpdatedAt()->format('Y-m-d H:i:s'),
+        ];
+
+        $partnersData = [];
+        foreach ($corporation->getPartners() as $partner) {
+            $partnersData[] = [
+                'id' => $partner->getId(),
+                'name' => $partner->getName(),
+                'cpf' => $partner->getCpf(),
+                'qualification' => $partner->getQualification(),
+                'entry' => $partner->getEntry()->format('Y-m-d'),
+            ];
+        }
+
+        $corporationData['partners'] = $partnersData;
+
+        $data = $serializer->serialize($corporationData, 'json');
+        return JsonResponse::fromJsonString($data);
     }
 
     #[Route('/corporations', name: 'corporation_create', methods: ['POST'])]
@@ -152,7 +235,6 @@ class CorporationController extends AbstractController
 
         return $this->json([
             'message' => 'Empresa atualizada com sucesso.',
-            'data' => $corporation,
         ], 200);
     }
 
@@ -171,7 +253,6 @@ class CorporationController extends AbstractController
 
         return $this->json([
             'message' => 'Empresa removida com sucesso.',
-            'data' => $corporation
         ], 200);
     }
 
