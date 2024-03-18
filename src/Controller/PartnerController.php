@@ -177,10 +177,10 @@ class PartnerController extends AbstractController
         ], 201);
     }
 
-    #[Route('/partners/{partner}', name: 'partner_update', methods: ['PUT', 'PATCH'])]
-    public function update(int $partner, Request $request, ManagerRegistry $doctrine, PartnerRepository $partnerRepository): JsonResponse
+    #[Route('/partners/{cpf}', name: 'partner_update', methods: ['PUT', 'PATCH'])]
+    public function update(string $cpf, Request $request, ManagerRegistry $doctrine, PartnerRepository $partnerRepository): JsonResponse
     {
-        $partner = $partnerRepository->find($partner);
+        $partner = $partnerRepository->findOneBy(['cpf' => $cpf]);
         if(!$partner) {
             return $this->json([
              'message' => 'Sócio não existe.'
@@ -215,6 +215,24 @@ class PartnerController extends AbstractController
     public function delete(int $partner, PartnerRepository $partnerRepository): JsonResponse
     {
         $partner = $partnerRepository->find($partner);
+
+        if(!$partner) {
+            return $this->json([
+               'message' => 'Sócio não existe.'
+            ], 400);
+        }
+
+        $partnerRepository->remove($partner, true);
+
+        return $this->json([
+            'message' => 'Sócio removido com sucesso.',
+        ], 200);
+    }
+
+    #[Route('/partners/remove/cpf/{cpf}', name: 'partner_delete_by_cpf', methods: ['DELETE'])]
+    public function deleteByCpf(string $cpf, PartnerRepository $partnerRepository): JsonResponse
+    {
+        $partner = $partnerRepository->findOneBy(['cpf' => $cpf]);
 
         if(!$partner) {
             return $this->json([
