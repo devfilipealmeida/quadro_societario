@@ -19,8 +19,9 @@ Para rodar esse projeto, você precisa seguir os passos abaixo:
 1. Clonar este repositório
 2. Fazer download das dependências com o comando 'composer install'
 3. Disponibilizar o serviço de banco de dados por meio do Docker com o comando: docker-compose up -d
-4. Disponibilizar o PHP Web Server via Symfony com o comando: symfony serve -d --no-tls
-5. O endpoint estará disponível em: [http://127.0.0.1:8000/api](http://127.0.0.1:8000/api)
+4. Executar as migrations com o comando: symfony doctrine:migrations:migrate
+5. Disponibilizar o PHP Web Server via Symfony com o comando: symfony serve -d --no-tls
+6. O endpoint estará disponível em: [http://127.0.0.1:8000/api](http://127.0.0.1:8000/api)
 
 Das Entidades contidas no Projeto:
 - Corporation -> Empresas que serão cadastradas
